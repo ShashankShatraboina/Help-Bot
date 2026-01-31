@@ -1,0 +1,435 @@
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import type { Mode, ModeDefinition, UIStyle } from "@/types/chat"
+import Link from "next/link"
+import { useAuth } from "@/contexts/auth-context"
+import { useIsMobile } from "@/hooks/use-mobile"
+import {
+  AlertCircle,
+  Github,
+  Gamepad2,
+  Menu,
+  MessageCircle,
+  Moon,
+  Palette,
+  Sparkles,
+  Sun,
+  Trash2,
+  Activity,
+  Volume2,
+  VolumeX,
+  Download,
+  Cloud,
+  CloudOff,
+  UserCircle,
+} from "lucide-react"
+import { ProfileSelector } from "./profile-selector"
+
+interface ChatTopbarProps {
+  mode: Mode
+  modeMeta: ModeDefinition
+  uiStyle: UIStyle
+  onToggleUI: () => void
+  darkMode: boolean
+  onToggleTheme: () => void
+  messageCount: number
+  voiceEnabled: boolean
+  onToggleVoice: () => void
+  showVoiceToggle?: boolean
+  onClearChat: () => void
+  onOpenSidebar: () => void
+  providerLabel: string
+  error: string | null
+  heatmapAvailable?: boolean
+  onOpenHeatmap?: () => void
+  // heatmapOpen and onToggleHeatmap removed: control moved to the sidebar
+  onDismissError: () => void
+  userMenu?: React.ReactNode
+  currentProfileId?: string | null
+  onProfileSelect?: (profileId: string | null) => void
+  onExportChat?: () => void
+  pendingQueueCount?: number
+  onSyncQueue?: () => void
+}
+
+export function ChatTopbar({
+  mode,
+  modeMeta,
+  uiStyle,
+  onToggleUI,
+  darkMode,
+  onToggleTheme,
+  messageCount,
+  voiceEnabled,
+  onToggleVoice,
+  onClearChat,
+  onOpenSidebar,
+  providerLabel,
+  error,
+  heatmapAvailable,
+  onDismissError,
+  userMenu,
+  onOpenHeatmap,
+  showVoiceToggle = false,
+  currentProfileId,
+  onProfileSelect,
+  onExportChat,
+  pendingQueueCount = 0,
+  onSyncQueue,
+}: ChatTopbarProps) {
+  const isPixel = uiStyle === "pixel"
+  const CurrentModeIcon = modeMeta.icon
+  const isMobile = useIsMobile()
+
+  const surfaceClass = cn(
+    "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between",
+    isMobile && "fixed top-0 left-0 right-0 z-50 w-full",
+    isPixel
+      ? "pixel-panel px-3 py-3 sm:px-4 text-slate-700 dark:text-slate-200"
+      : isMobile
+        ? "bg-white/98 backdrop-blur-xl border-b border-white/60 dark:bg-slate-900/98 dark:border-white/10 px-4 py-3"
+        : "rounded-2xl border border-white/50 bg-white/70 px-3 py-3 sm:px-4 sm:py-3 backdrop-blur-md shadow-[0_12px_34px_-26px_rgba(15,23,42,0.45)] dark:border-white/10 dark:bg-slate-900/60",
+  )
+
+  const iconWrapClass = cn(
+    "flex h-10 w-10 shrink-0 items-center justify-center",
+    isPixel
+      ? "pixel-icon text-slate-900 dark:text-slate-100"
+      : "rounded-xl border border-white/40 bg-white/90 text-slate-800 shadow-sm dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100",
+  )
+
+  const controlButton = isPixel
+    ? "pixel-control inline-flex h-7 w-7 shrink-0 items-center justify-center p-0 text-xs text-slate-600 transition-all hover:text-slate-900 dark:text-slate-300 dark:hover:text-white sm:h-8 sm:w-8"
+    : "inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/40 bg-white/70 p-0 text-slate-500 transition-colors hover:bg-white hover:text-slate-900 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-white"
+
+  const controlsContainerClass = cn(
+    "flex items-center gap-1.5 ml-0 flex-wrap sm:flex-nowrap sm:ml-auto sm:gap-2",
+    isPixel &&
+      "sm:ml-auto sm:grid sm:[grid-template-columns:repeat(3,max-content)] sm:items-center sm:justify-end sm:gap-x-1.5 sm:gap-y-1",
+  )
+
+  const { isAuthenticated } = useAuth()
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className={surfaceClass}>
+        {/* Mobile: Simple header with menu, profile selector, and user profile */}
+        {isMobile ? (
+          <div className="flex items-center justify-between w-full">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onOpenSidebar}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white",
+                isPixel && "pixel-control text-xs text-slate-700 dark:text-slate-200",
+              )}
+              aria-label="Open navigation"
+            >
+              <Menu className="h-4 w-4" />
+              <span>Menu</span>
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              {onExportChat && messageCount > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={onExportChat}
+                  className={cn(
+                    "h-9 w-9 rounded-full border border-white/40 bg-white/70 text-slate-600 hover:bg-white/90 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300",
+                    isPixel && "pixel-control"
+                  )}
+                  aria-label="Export chat"
+                  title="Export chat to PDF"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {isAuthenticated && onProfileSelect && (
+                <ProfileSelector
+                  mode={mode}
+                  currentProfileId={currentProfileId}
+                  onProfileSelect={onProfileSelect}
+                  uiStyle={uiStyle}
+                  className=""
+                />
+              )}
+              
+              {isAuthenticated ? (
+                userMenu
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full border border-white/40 bg-white/70 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-white/90 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300",
+                    isPixel && "pixel-control"
+                  )}
+                  asChild
+                >
+                  <Link href="/auth/login" aria-label="Login">
+                    <UserCircle className="h-4 w-4" />
+                    <span>Login</span>
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Desktop: Full header with all info */
+          <>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className={iconWrapClass}>
+            <CurrentModeIcon className={cn("h-5 w-5", modeMeta.color)} />
+          </div>
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2
+                className={cn(
+                  "truncate text-lg font-semibold text-slate-900 dark:text-slate-100",
+                  isPixel && "pixel-heading text-[0.9rem] text-slate-800 dark:text-slate-100 sm:text-[1rem]",
+                )}
+                title={`${modeMeta.label} Assistant`}
+              >
+                {modeMeta.label} Assistant
+              </h2>
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "rounded-full px-2.5 text-[0.7rem] font-semibold tracking-wide",
+                  isPixel
+                    ? "pixel-badge text-[0.62rem] tracking-[0.08em] text-slate-600 dark:text-slate-200 sm:text-[0.7rem]"
+                    : "border-0 bg-slate-900/5 text-slate-600 dark:bg-white/10 dark:text-white",
+                )}
+              >
+                {providerLabel}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "flex items-center gap-1 rounded-full px-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.18em]",
+                  isPixel
+                    ? "pixel-badge text-[0.56rem] tracking-[0.12em] text-slate-600 dark:text-slate-200 sm:text-[0.62rem]"
+                    : "border-slate-300/70 text-slate-500 dark:border-white/15 dark:text-slate-200",
+                )}
+              >
+                <Sparkles className="h-3 w-3" />
+                {mode.toUpperCase()}
+              </Badge>
+            </div>
+            <p
+              className={cn(
+                "text-sm text-slate-500 dark:text-slate-400",
+                isPixel && "pixel-subheading leading-relaxed text-slate-600 dark:text-slate-300",
+              )}
+            >
+              {modeMeta.description}
+            </p>
+          </div>
+        </div>
+        <div className={controlsContainerClass}>
+          {/* left-side controls (Menu, toggles) — Profile selector will be rendered on the right side below */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onOpenSidebar}
+            className={cn(
+              "flex items-center gap-1 rounded-full border border-white/40 bg-white/70 px-3 py-1.5 text-sm font-medium text-slate-600 hover:border-white/70 hover:bg-white/90 hover:text-slate-900 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white",
+              isPixel && "pixel-control rounded-full px-3 py-1 text-xs text-slate-700 dark:text-slate-200",
+              "lg:hidden",
+            )}
+            aria-label="Open navigation"
+          >
+            <Menu className="h-4 w-4" />
+            <span className={cn(isPixel && "text-[0.75rem] tracking-[0.08em]")}>Menu</span>
+          </Button>
+          {/*
+          <Badge
+            variant="secondary"
+            onClick={onOpenHeatmap}
+            role={onOpenHeatmap ? "button" : undefined}
+            tabIndex={onOpenHeatmap ? 0 : undefined}
+            onKeyDown={
+              onOpenHeatmap
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      onOpenHeatmap()
+                    }
+                  }
+                : undefined
+            }
+            className={cn(
+              "h-7 items-center gap-1 rounded-full px-2.5 text-[0.75rem] font-semibold cursor-pointer select-none",
+              isPixel
+                ? "pixel-badge h-7 text-[0.62rem] text-slate-600 dark:text-slate-200 sm:text-[0.7rem]"
+                : "border-0 bg-slate-900/5 text-slate-600 dark:bg-white/10 dark:text-white",
+            )}
+            aria-label={onOpenHeatmap ? "Open conversation heatmap" : undefined}
+          >
+            <MessageCircle className="h-3 w-3" />
+            {messageCount}
+          </Badge>
+          */}
+          {isAuthenticated && showVoiceToggle ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onToggleVoice}
+              className={cn(controlButton)}
+              aria-pressed={voiceEnabled}
+              aria-label={voiceEnabled ? "Disable voice responses" : "Enable voice responses"}
+            >
+              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+          ) : null}
+          {/* Pending queue indicator */}
+          {isAuthenticated && pendingQueueCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onSyncQueue}
+              className={cn(
+                controlButton,
+                "relative",
+                isPixel
+                  ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                  : "text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300",
+              )}
+              aria-label={`${pendingQueueCount} messages pending sync. Click to retry.`}
+              title={`${pendingQueueCount} messages pending sync`}
+            >
+              <CloudOff className="h-4 w-4" />
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[0.6rem] font-bold text-white">
+                {pendingQueueCount > 9 ? "9+" : pendingQueueCount}
+              </span>
+            </Button>
+          )}
+          {!isAuthenticated && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onToggleUI}
+              className={cn(controlButton)}
+              aria-label="Toggle interface style"
+            >
+              {uiStyle === "modern" ? <Gamepad2 className="h-4 w-4" /> : <Palette className="h-4 w-4" />}
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onToggleTheme}
+            className={cn(controlButton)}
+            aria-label={darkMode ? "Use light theme" : "Use dark theme"}
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          {onExportChat && messageCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onExportChat}
+              className={cn(controlButton)}
+              aria-label="Export chat"
+              title="Export chat to PDF"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          )}
+          {!isAuthenticated && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onClearChat}
+              className={cn(
+                controlButton,
+                isPixel
+                  ? "pixel-control-alert text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
+                  : "text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300",
+              )}
+              aria-label="Clear conversation"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          {/* Right-side group: profile selector + user menu / get full access */}
+          <div className="ml-auto flex items-center gap-2 order-4 sm:order-none">
+            {isAuthenticated && onProfileSelect && (
+              <ProfileSelector
+                mode={mode}
+                currentProfileId={currentProfileId}
+                onProfileSelect={onProfileSelect}
+                uiStyle={uiStyle}
+                className=""
+              />
+            )}
+
+            {isAuthenticated ? (
+              userMenu
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                className={cn(
+                  "ml-2 !h-auto self-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium",
+                  isPixel ? "pixel-control text-slate-700 dark:text-slate-200" : "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm",
+                )}
+                asChild
+              >
+                <Link href="/auth/login">Login/Signup</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+          </>
+        )}
+      </div>
+
+      {error && (
+        <div
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm text-rose-600 dark:text-rose-300",
+            isPixel
+              ? "pixel-tile border-rose-400 bg-rose-100/70 text-rose-700 dark:border-rose-500 dark:bg-rose-900/40"
+              : "rounded-xl border border-rose-200/80 bg-rose-50/80 dark:border-rose-500/40 dark:bg-rose-900/30",
+          )}
+        >
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span
+            className={cn(
+              "flex-1",
+              isPixel && "pixel-subheading text-[0.72rem] leading-snug text-rose-700 dark:text-rose-200",
+            )}
+          >
+            {error}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onDismissError}
+            className={cn(controlButton, "!h-7 !w-7")}
+          >
+            X
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
